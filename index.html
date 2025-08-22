@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการงาน</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff6b6b, #ee5a24, #ff6b6b);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .add-task-form {
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .btn-danger:hover {
+            transform: scale(1.05);
+        }
+
+        .tasks-container {
+            padding: 30px;
+        }
+
+        .filter-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
+            padding: 5px;
+        }
+
+        .filter-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .task-item {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5px;
+            height: 100%;
+        }
+
+        .task-item.pending::before {
+            background: linear-gradient(180deg, #ffa726, #ff9800);
+        }
+
+        .task-item.completed::before {
+            background: linear-gradient(180deg, #66bb6a, #4caf50);
+        }
+
+        .task-item.overdue::before {
+            background: linear-gradient(180deg, #ef5350, #f44336);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .task-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .task-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .task-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .task-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .task-status.overdue {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .task-description {
+            margin-bottom: 15px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .priority-high {
+            border-left: 5px solid #ff4757;
+        }
+
+        .priority-medium {
+            border-left: 5px solid #ffa502;
+        }
+
+        .priority-low {
+            border-left: 5px solid #7bed9f;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .task-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 ระบบจัดการงาน</h1>
+            <p>จัดการงานของคุณอย่างมีประสิทธิภาพ</p>
+        </div>
+
+        <div class="add-task-form">
+            <h2 style="margin-bottom: 20px; color: #333;">เพิ่มงานใหม่</h2>
+            <div class="form-group">
+                <label for="taskTitle">ชื่องาน *</label>
+                <input type="text" id="taskTitle" class="form-control" placeholder="ระบุชื่องานที่ต้องทำ..." required>
+            </div>
+            <div class="form-group">
+                <label for="taskSubject">วิชา *</label>
+                <div style="display: flex; gap: 10px;">
+                    <select id="taskSubject" class="form-control" style="flex: 1;">
+                        <option value="">เลือกวิชา...</option>
+                    </select>
+                    <button type="button" class="btn" style="padding: 12px 15px; background: #28a745; color: white;" onclick="showAddSubjectModal()">+ วิชาใหม่</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="taskDescription">รายละเอียด</label>
+                <textarea id="taskDescription" class="form-control" rows="3" placeholder="รายละเอียดเพิ่มเติมของงาน..."></textarea>
+            </div>
+            <div style="display: flex; gap: 15px;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="taskDueDate">กำหนดส่ง *</label>
+                    <input type="datetime-local" id="taskDueDate" class="form-control" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="taskPriority">ความสำคัญ</label>
+                    <select id="taskPriority" class="form-control">
+                        <option value="low">ต่ำ</option>
+                        <option value="medium" selected>ปานกลาง</option>
+                        <option value="high">สูง</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="addTask()">
+                ✨ เพิ่มงาน
+            </button>
+        </div>
+
+        <div class="tasks-container">
+            <div class="stats" id="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalTasks">0</div>
+                    <div class="stat-label">งานทั้งหมด</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="pendingTasks">0</div>
+                    <div class="stat-label">รอดำเนินการ</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="completedTasks">0</div>
+                    <div class="stat-label">เสร็จแล้ว</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="overdueTasks">0</div>
+                    <div class="stat-label">เลยกำหนด</div>
+                </div>
+            </div>
+
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterTasks('all')">ทั้งหมด</button>
+                <button class="filter-tab" onclick="filterTasks('pending')">รอดำเนินการ</button>
+                <button class="filter-tab" onclick="filterTasks('completed')">เสร็จแล้ว</button>
+                <button class="filter-tab" onclick="filterTasks('overdue')">เลยกำหนด</button>
+            </div>
+
+            <div class="subject-filter" style="margin-bottom: 20px;">
+                <label for="subjectFilter" style="display: block; margin-bottom: 8px; color: #333; font-weight: 600;">กรองตามวิชา:</label>
+                <select id="subjectFilter" class="form-control" style="max-width: 300px;" onchange="filterBySubject()">
+                    <option value="">ทุกวิชา</option>
+                </select>
+            </div>
+
+            <div id="tasksList">
+                <div class="empty-state">
+                    <div style="font-size: 4em; margin-bottom: 20px;">📋</div>
+                    <h3>ยังไม่มีงานในระบบ</h3>
+                    <p>เริ่มต้นโดยการเพิ่มงานใหม่ด้านบน</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for adding new subject -->
+    <div id="subjectModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h3 style="margin-bottom: 20px; color: #333;">เพิ่มวิชาใหม่</h3>
+            <div class="form-group">
+                <label for="newSubjectName">ชื่อวิชา:</label>
+                <input type="text" id="newSubjectName" class="form-control" placeholder="เช่น คณิตศาสตร์, ภาษาอังกฤษ..." maxlength="50">
+            </div>
+            <div class="form-group">
+                <label for="newSubjectColor">สี:</label>
+                <select id="newSubjectColor" class="form-control">
+                    <option value="#667eea">น้ำเงิน</option>
+                    <option value="#ff6b6b">แดง</option>
+                    <option value="#4ecdc4">เขียวอมฟ้า</option>
+                    <option value="#45b7d1">ฟ้า</option>
+                    <option value="#96ceb4">เขียว</option>
+                    <option value="#feca57">เหลือง</option>
+                    <option value="#ff9ff3">ชมพู</option>
+                    <option value="#54a0ff">น้ำเงินอ่อน</option>
+                    <option value="#5f27cd">ม่วง</option>
+                    <option value="#00d2d3">เขียวอมฟ้าเข้ม</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn" style="background: #6c757d; color: white;" onclick="hideAddSubjectModal()">ยกเลิก</button>
+                <button type="button" class="btn btn-primary" onclick="addSubject()">เพิ่มวิชา</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+        let subjects = JSON.parse(localStorage.getItem('subjects') || '[]');
+        let currentFilter = 'all';
+        let currentSubjectFilter = '';
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function saveSubjects() {
+            localStorage.setItem('subjects', JSON.stringify(subjects));
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function addTask() {
+            const title = document.getElementById('taskTitle').value.trim();
+            const subject = document.getElementById('taskSubject').value;
+            const description = document.getElementById('taskDescription').value.trim();
+            const dueDate = document.getElementById('taskDueDate').value;
+            const priority = document.getElementById('taskPriority').value;
+
+            if (!title || !dueDate || !subject) {
+                alert('กรุณากรอกชื่องาน วิชา และกำหนดส่ง');
+                return;
+            }
+
+            const task = {
+                id: generateId(),
+                title: title,
+                subject: subject,
+                description: description,
+                dueDate: dueDate,
+                priority: priority,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+
+            tasks.push(task);
+            saveTasks();
+
+            // Clear form
+            document.getElementById('taskTitle').value = '';
+            document.getElementById('taskSubject').value = '';
+            document.getElementById('taskDescription').value = '';
+            document.getElementById('taskDueDate').value = '';
+            document.getElementById('taskPriority').value = 'medium';
+            setDefaultDueDate();
+
+            renderTasks();
+            updateStats();
+        }
+
+        function deleteTask(id) {
+            if (confirm('คุณต้องการลบงานนี้หรือไม่?')) {
+                tasks = tasks.filter(task => task.id !== id);
+                saveTasks();
+                renderTasks();
+                updateStats();
+            }
+        }
+
+        function toggleTaskStatus(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.status = task.status === 'completed' ? 'pending' : 'completed';
+                saveTasks();
+                renderTasks();
+                updateStats();
+            }
+        }
+
+        function getTaskStatus(task) {
+            if (task.status === 'completed') return 'completed';
+            const now = new Date();
+            const dueDate = new Date(task.dueDate);
+            return now > dueDate ? 'overdue' : 'pending';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return date.toLocaleDateString('th-TH', options);
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'รอดำเนินการ',
+                'completed': 'เสร็จแล้ว',
+                'overdue': 'เลยกำหนด'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getPriorityText(priority) {
+            const priorityMap = {
+                'low': 'ต่ำ',
+                'medium': 'ปานกลาง',
+                'high': 'สูง'
+            };
+            return priorityMap[priority] || priority;
+        }
+
+        function renderTasks() {
+            const tasksList = document.getElementById('tasksList');
+            
+            // Update task statuses based on due dates
+            tasks.forEach(task => {
+                if (task.status !== 'completed') {
+                    task.status = getTaskStatus(task);
+                }
+            });
+
+            let filteredTasks = tasks;
+            
+            // Filter by status
+            if (currentFilter !== 'all') {
+                filteredTasks = filteredTasks.filter(task => getTaskStatus(task) === currentFilter);
+            }
+            
+            // Filter by subject
+            if (currentSubjectFilter) {
+                filteredTasks = filteredTasks.filter(task => task.subject === currentSubjectFilter);
+            }
+
+            // Sort tasks: overdue first, then by due date
+            filteredTasks.sort((a, b) => {
+                const statusA = getTaskStatus(a);
+                const statusB = getTaskStatus(b);
+                
+                if (statusA === 'overdue' && statusB !== 'overdue') return -1;
+                if (statusB === 'overdue' && statusA !== 'overdue') return 1;
+                
+                return new Date(a.dueDate) - new Date(b.dueDate);
+            });
+
+            if (filteredTasks.length === 0) {
+                tasksList.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 4em; margin-bottom: 20px;">📋</div>
+                        <h3>${currentFilter === 'all' && !currentSubjectFilter ? 'ยังไม่มีงานในระบบ' : 'ไม่มีงานในหมวดนี้'}</h3>
+                        <p>${currentFilter === 'all' && !currentSubjectFilter ? 'เริ่มต้นโดยการเพิ่มงานใหม่ด้านบน' : 'เปลี่ยนตัวกรองหรือเพิ่มงานใหม่'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            tasksList.innerHTML = filteredTasks.map(task => {
+                const status = getTaskStatus(task);
+                const isCompleted = task.status === 'completed';
+                const subjectInfo = subjects.find(s => s.name === task.subject);
+                const subjectColor = subjectInfo ? subjectInfo.color : '#667e
